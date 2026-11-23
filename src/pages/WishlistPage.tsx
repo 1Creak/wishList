@@ -90,7 +90,7 @@ export function WishlistPage() {
 
   const load = useCallback(async () => {
     const [wl, its] = await Promise.all([
-      supabase.from('wishlists').select(`*, owner:profiles(${PROFILE_FIELDS})`).eq('id', id).maybeSingle(),
+      supabase.from('wishlists').select(`*, owner:profiles!wishlists_owner_id_fkey(${PROFILE_FIELDS})`).eq('id', id).maybeSingle(),
       supabase
         .from('items')
         .select(ITEM_SELECT)
@@ -98,6 +98,9 @@ export function WishlistPage() {
         .order('position')
         .order('created_at'),
     ])
+    // 22P02 = malformed id in the URL, which is just "not found".
+    if (wl.error && wl.error.code !== '22P02') console.error('wishlist load failed', wl.error)
+    if (its.error && its.error.code !== '22P02') console.error('items load failed', its.error)
     if (!wl.data) {
       setStatus('notFound')
       return

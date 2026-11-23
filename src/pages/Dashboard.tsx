@@ -31,7 +31,7 @@ export function Dashboard() {
         .order('created_at', { ascending: false }),
       supabase
         .from('wishlist_members')
-        .select('wishlist:wishlists(*, owner:profiles(id, username, display_name, avatar_url))')
+        .select('wishlist:wishlists(*, owner:profiles!wishlists_owner_id_fkey(id, username, display_name, avatar_url))')
         .eq('user_id', user.id)
         .order('joined_at', { ascending: false }),
     ])
