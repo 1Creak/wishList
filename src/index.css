@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #000000;
+  --color-night: #0B192C;
+  --color-navy: #1E3E62;
+  --color-accent: #FF6500;
+  --color-accent-soft: #ff7f2a;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply min-h-screen bg-ink font-sans text-slate-100 antialiased;
+    background-image:
+      radial-gradient(60rem 40rem at 85% -10%, rgb(255 101 0 / 0.10), transparent 60%),
+      radial-gradient(50rem 40rem at -10% 10%, rgb(30 62 98 / 0.55), transparent 60%),
+      linear-gradient(180deg, var(--color-night) 0%, var(--color-ink) 70%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: rgb(255 101 0 / 0.4);
+  }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+    disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+@utility btn-primary {
+  @apply btn bg-accent text-white shadow-[0_8px_24px_-8px_rgb(255_101_0/0.6)] hover:bg-accent-soft;
+}
+
+@utility btn-secondary {
+  @apply btn border border-white/10 bg-navy/60 text-slate-100 hover:bg-navy;
+}
+
+@utility btn-ghost {
+  @apply btn text-slate-300 hover:bg-white/5 hover:text-white;
+}
+
+@utility btn-danger {
+  @apply btn border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20;
+}
+
+@utility card {
+  @apply rounded-2xl border border-white/10 bg-night/80 backdrop-blur;
+}
+
+@utility input {
+  @apply w-full rounded-xl border border-white/10 bg-ink/60 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500
+    outline-none transition focus:border-accent/70 focus:ring-2 focus:ring-accent/30;
+}
+
+@utility label {
+  @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400;
+}
