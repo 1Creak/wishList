@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { absoluteUrl, supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
@@ -15,6 +15,20 @@ function GoogleLogo() {
   )
 }
 
+/** Shows the Google button only when the provider is enabled in Supabase. */
+function useGoogleEnabled(): boolean {
+  const [enabled, setEnabled] = useState(false)
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, {
+      headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+    })
+      .then((r) => r.json())
+      .then((s: { external?: { google?: boolean } }) => setEnabled(!!s.external?.google))
+      .catch(() => setEnabled(false))
+  }, [])
+  return enabled
+}
+
 export function Login() {
   const { user, loading } = useAuth()
   const { t } = useI18n()
@@ -27,6 +41,7 @@ export function Login() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
+  const googleEnabled = useGoogleEnabled()
 
   if (loading) return <PageSpinner />
   if (user) return <Navigate to={from} replace />
@@ -102,13 +117,16 @@ export function Login() {
           ))}
         </div>
 
-        <button type="button" onClick={google} className="btn w-full bg-white py-3 text-slate-900 hover:bg-slate-200">
-          <GoogleLogo /> {t('auth.google')}
-        </button>
-
-        <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-slate-500">
-          <span className="h-px flex-1 bg-white/10" /> {t('auth.or')} <span className="h-px flex-1 bg-white/10" />
-        </div>
+        {googleEnabled && (
+          <>
+            <button type="button" onClick={google} className="btn w-full bg-white py-3 text-slate-900 hover:bg-slate-200">
+              <GoogleLogo /> {t('auth.google')}
+            </button>
+            <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-slate-500">
+              <span className="h-px flex-1 bg-white/10" /> {t('auth.or')} <span className="h-px flex-1 bg-white/10" />
+            </div>
+          </>
+        )}
 
         <form onSubmit={submit} className="space-y-4">
           <div>

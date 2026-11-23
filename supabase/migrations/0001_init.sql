@@ -127,14 +127,14 @@ $$;
 -- New user → profile (username derived from the email)
 -- ---------------------------------------------------------------------
 
-create or replace function private.handle_new_user()
-returns trigger language plpgsql security definer set search_path = '' as $$
+create or replace function private.create_profile(p_id uuid, p_email text, p_meta jsonb)
+returns void language plpgsql security definer set search_path = '' as $$
 declare
   base      text;
   candidate text;
   n         integer := 0;
 begin
-  base := lower(regexp_replace(split_part(coalesce(new.email, ''), '@', 1), '[^a-zA-Z0-9_]', '', 'g'));
+  base := lower(regexp_replace(split_part(coalesce(p_email, ''), '@', 1), '[^a-zA-Z0-9_]', '', 'g'));
   if char_length(base) < 3 then
     base := 'user' || base;
   end if;
@@ -148,15 +148,23 @@ begin
 
   insert into public.profiles (id, username, display_name, avatar_url)
   values (
-    new.id,
+    p_id,
     candidate,
     left(coalesce(
-      new.raw_user_meta_data ->> 'full_name',
-      new.raw_user_meta_data ->> 'name',
-      split_part(new.email, '@', 1)
+      p_meta ->> 'full_name',
+      p_meta ->> 'name',
+      split_part(p_email, '@', 1)
     ), 60),
-    left(new.raw_user_meta_data ->> 'avatar_url', 500)
-  );
+    left(p_meta ->> 'avatar_url', 500)
+  )
+  on conflict (id) do nothing;
+end;
+$$;
+
+create or replace function private.handle_new_user()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  perform private.create_profile(new.id, new.email, new.raw_user_meta_data);
   return new;
 end;
 $$;
@@ -164,6 +172,21 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function private.handle_new_user();
+
+-- Users who signed up before this migration was applied get a profile too.
+do $$
+declare
+  u record;
+begin
+  for u in
+    select au.id, au.email, au.raw_user_meta_data
+    from auth.users au
+    where not exists (select 1 from public.profiles p where p.id = au.id)
+  loop
+    perform private.create_profile(u.id, u.email, u.raw_user_meta_data);
+  end loop;
+end;
+$$;
 
 -- ---------------------------------------------------------------------
 -- RPC (exposed through the Data API)
